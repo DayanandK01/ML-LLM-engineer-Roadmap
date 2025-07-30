@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Preprocessing & Feature Engineering Handbook</title>
+    <link rel="stylesheet" href="ds.css">
+</head>
+<body>
+    <header>
+        <h1>Data Preprocessing & Feature Engineering Handbook</h1>
+        <p>This handbook offers a comprehensive, code-centric guide to essential data preparation techniques for machine learning. Each section provides detailed explanations in the surrounding text and concise, visually distinct comments directly within the code, ensuring a clear understanding of every step and its purpose.</p>
+    </header>
+
+    <main>
+        <section id="setup">
+            <h2>Initial Setup & Data Loading</h2>
+            <p>To begin, we import all necessary libraries for data manipulation, numerical operations, machine learning preprocessing, and natural language processing. A sample DataFrame is then created to serve as our working dataset, containing various data types that illustrate different preprocessing challenges. Note the one-time NLTK resource downloads are included for a complete setup.</p>
+            <pre><code class="language-python">
+import pandas as pd
+import numpy as np
+from sklearn.preprocessing import MinMaxScaler, StandardScaler, OneHotEncoder, LabelEncoder, OrdinalEncoder
+from sklearn.impute import SimpleImputer
+from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
+import nltk
+from nltk.corpus import stopwords
+from nltk.stem import PorterStemmer, WordNetLemmatizer
+import datetime
+import os
+
+<span class="comment-line"># --- NLTK Resource Downloads (Run this block once for NLTK functionality) ---</span>
+<span class="comment-line"># Checks if NLTK data path exists, creates if not.</span>
+nltk_data_path = os.path.expanduser('~/.nltk_data')
+if not os.path.exists(nltk_data_path):
+    os.makedirs(nltk_data_path)
+<span class="comment-line"># Appends to NLTK data paths if not already present.</span>
+if nltk_data_path not in nltk.data.path:
+    nltk.data.path.append(nltk_data_path)
+
+<span class="comment-line"># List of NLTK resources required for text processing.</span>
+resources_to_download = ['stopwords', 'punkt', 'wordnet']
+for resource in resources_to_download:
+    try:
+        <span class="comment-line"># Checks if resource is already downloaded.</span>
+        nltk.data.find(f'corpora/{resource}' if resource != 'punkt' else f'tokenizers/{resource}')
+    except LookupError:
+        <span class="comment-line"># Downloads the resource if not found, quietly.</span>
+        nltk.download(resource, download_dir=nltk_data_path, quiet=True)
+<span class="comment-line"># --- End NLTK Downloads ---</span>
+
+<span class="comment-line"># Sample DataFrame Creation: This DataFrame simulates raw data with various types.</span>
+data = {
+    'Numerical_Continuous': [25.3, 15.7, 30.1, 45.0, 12.5, 90.0, 28.9, 18.2, 5.0, 75.5, np.nan], <span class="comment-line"># Missing value included</span>
+    'Numerical_Discrete': [1, 2, 1, 3, 2, 5, 1, 3, 1, 4, 1],
+    'Categorical_Nominal': ['Red', 'Blue', 'Green', 'Red', 'Blue', 'Green', 'Red', 'Yellow', 'Red', 'Blue', 'Green'],
+    'Categorical_Ordinal': ['High', 'Medium', 'Low', 'Medium', 'High', 'Low', 'High', 'Medium', 'Low', 'High', 'Medium'],
+    'Text_Data': [
+        "This is a great product and I really enjoyed using it!",
+        "Poor quality, very disappointed.",
+        "It was okay, nothing special.",
+        "Highly recommend this. It's fantastic!",
+        "Not bad, but could be better. The price is too high.",
+        "Excellent! I will buy again.",
+        "Very good quality for the price.",
+        "Could not be happier with my purchase.",
+        "Worst experience ever. Do not buy.",
+        "Simply amazing product!",
+        "A mediocre item."
+    ],
+    'Time_Series_Timestamp': pd.to_datetime([
+        '2023-01-01 10:00:00', '2023-01-01 11:00:00', '2023-01-01 12:00:00',
+        '2023-01-01 13:00:00', '2023-01-01 14:00:00', '2023-01-01 15:00:00',
+        '2023-01-01 16:00:00', '2023-01-01 17:00:00', '2023-01-01 18:00:00',
+        '2023-01-01 19:00:00', '2023-01-01 20:00:00'
+    ]),
+    'Time_Series_Value': [100, 105, 110, 108, 115, 120, 118, 125, 130, 128, 135]
+}
+df = pd.DataFrame(data)
+<span class="comment-line"># Set the timestamp column as the DataFrame index for time series operations.</span>
+df_time_series = df.set_index('Time_Series_Timestamp')
+            </code></pre>
+        </section>
+
+        <section id="numerical-categorical">
+            <h2>1. Handling Numerical & Categorical Data</h2>
+            <p>This section details essential techniques for cleaning and transforming standard numerical and categorical features. These preprocessing steps are critical to ensure that your data is in the correct format and scale, making it suitable for various machine learning algorithms and improving model performance.</p>
+
+            <h3>1.1 Missing Value Imputation (Numerical)</h3>
+            <p>Missing values (represented as `NaN` or `None`) are common in real-world datasets and can cause errors or poor performance in models. Imputation involves filling these gaps using a chosen strategy. `SimpleImputer` from Scikit-learn is a versatile tool that can replace missing values with the mean, median, mode (most frequent), or a constant. Here, we demonstrate using the mean for a continuous column and the mode for a discrete column.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Initialize SimpleImputer to fill missing values with the mean of the column.</span>
+imputer_mean = SimpleImputer(strategy='mean')
+<span class="comment-line"># Apply imputation to 'Numerical_Continuous' column and create a new imputed column.</span>
+df['Numerical_Continuous_Imputed'] = imputer_mean.fit_transform(df[['Numerical_Continuous']])
+
+<span class="comment-line"># Initialize SimpleImputer to fill missing values with the most frequent value (mode).</span>
+imputer_mode = SimpleImputer(strategy='most_frequent')
+<span class="comment-line"># Apply imputation to 'Numerical_Discrete' column.</span>
+df['Numerical_Discrete_Imputed'] = imputer_mode.fit_transform(df[['Numerical_Discrete']])
+            </code></pre>
+
+            <h3>1.2 Feature Scaling</h3>
+            <p>Feature scaling is the process of transforming numerical values to a standard range or distribution. This is crucial because many machine learning algorithms perform better or converge faster when numerical input features are on a similar scale, preventing features with larger values from disproportionately influencing the model. We demonstrate two common scaling methods: Min-Max Scaling and Standardization.</p>
+            <h4>Min-Max Scaling (0-1 range)</h4>
+            <p>Min-Max scaling (also known as normalization) transforms features by scaling them to a fixed range, typically 0 to 1. This is useful when you need values within a specific boundary, such as for neural networks that expect inputs between 0 and 1.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Initialize MinMaxScaler to scale values to a range between 0 and 1.</span>
+scaler_minmax = MinMaxScaler()
+<span class="comment-line"># Apply Min-Max scaling to the imputed continuous numerical column.</span>
+df['Numerical_Continuous_MinMax'] = scaler_minmax.fit_transform(df[['Numerical_Continuous_Imputed']])
+            </code></pre>
+            <h4>Standardization (Mean=0, StdDev=1)</h4>
+            <p>Standardization (also known as Z-score normalization) transforms data to have a mean of 0 and a standard deviation of 1. This method is particularly useful for algorithms that assume a Gaussian distribution or are sensitive to the variance of features, such as Support Vector Machines (SVMs) and Linear Regression.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Initialize StandardScaler to transform data to a mean of 0 and std deviation of 1.</span>
+scaler_standard = StandardScaler()
+<span class="comment-line"># Apply standardization to the imputed continuous numerical column.</span>
+df['Numerical_Continuous_Standard'] = scaler_standard.fit_transform(df[['Numerical_Continuous_Imputed']])
+            </code></pre>
+
+            <h3>1.3 Categorical Encoding</h3>
+            <p>Categorical data, which represents distinct categories (e.g., 'Red', 'Blue', 'Green'), cannot be directly used by most machine learning models. Encoding converts these text-based categories into numerical representations. The choice of encoding depends on whether the categories have an inherent order (ordinal) or not (nominal).</p>
+            <h4>One-Hot Encoding (Nominal data)</h4>
+            <p>One-Hot Encoding is used for nominal categorical data where there is no intrinsic order between categories. It transforms each category into a new binary column, with a '1' indicating the presence of that category and '0' otherwise. This prevents the model from assuming any false ordinal relationship.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Initialize OneHotEncoder. sparse_output=False ensures a dense NumPy array.</span>
+<span class="comment-line"># handle_unknown='ignore' prevents errors if new categories appear in test data.</span>
+encoder_ohe = OneHotEncoder(sparse_output=False, handle_unknown='ignore')
+<span class="comment-line"># Apply One-Hot Encoding to the 'Categorical_Nominal' column.</span>
+ohe_features = encoder_ohe.fit_transform(df[['Categorical_Nominal']])
+<span class="comment-line"># Create a new DataFrame from the encoded features with proper column names.</span>
+ohe_df = pd.DataFrame(ohe_features, columns=encoder_ohe.get_feature_names_out(['Categorical_Nominal']))
+<span class="comment-line"># Concatenate the new one-hot encoded features back to the original DataFrame.</span>
+df = pd.concat([df, ohe_df], axis=1)
+            </code></pre>
+            <h4>Label Encoding (Ordinal data)</h4>
+            <p>Label Encoding (specifically `OrdinalEncoder` in Scikit-learn, which is more robust for explicitly defined orders) is used for ordinal categorical data where categories have a natural, inherent order (e.g., 'Low' < 'Medium' < 'High'). Each category is assigned a unique integer based on its position in the defined order, preserving the ordinal relationship.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Define the explicit order of the ordinal categories.</span>
+order = ['Low', 'Medium', 'High']
+<span class="comment-line"># Initialize OrdinalEncoder with the specified category order.</span>
+encoder_le = OrdinalEncoder(categories=[order])
+<span class="comment-line"># Apply Label Encoding to the 'Categorical_Ordinal' column.</span>
+df['Categorical_Ordinal_Encoded'] = encoder_le.fit_transform(df[['Categorical_Ordinal']])
+            </code></pre>
+        </section>
+
+        <section id="time-series">
+            <h2>2. Time Series Feature Engineering</h2>
+            <p>Time series data possesses unique temporal characteristics that can be leveraged to create powerful features for predictive models. Extracting meaningful information from timestamps and historical values is crucial for capturing trends, seasonality, and dependencies over time.</p>
+
+            <h3>2.1 Extracting Date/Time Components</h3>
+            <p>Timestamps themselves aren't directly usable by most machine learning models. However, various numerical features can be derived from them, such as the hour of the day, day of the week, or month. These components help models identify cyclical patterns and periodic behaviors within the data. Here, we extract common time-based features.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Extract the hour component from the DataFrame's datetime index.</span>
+df_time_series['Hour'] = df_time_series.index.hour
+<span class="comment-line"># Extract the day of the week (Monday=0, Sunday=6).</span>
+df_time_series['DayOfWeek'] = df_time_series.index.dayofweek
+<span class="comment-line"># Extract the month of the year.</span>
+df_time_series['Month'] = df_time_series.index.month
+<span class="comment-line"># Create a binary feature indicating if the day is a weekend (Saturday or Sunday).</span>
+df_time_series['IsWeekend'] = (df_time_series.index.dayofweek >= 5).astype(int)
+            </code></pre>
+
+            <h3>2.2 Lagged Features</h3>
+            <p>Lagged features (or shifted features) are values from previous time steps of a series. They are fundamental in time series analysis because the current value often depends on its past values. Creating lagged features allows a model to incorporate historical context directly into its predictions.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Create a feature with the value from the previous time step (lag 1).</span>
+df_time_series['Value_Lag1'] = df_time_series['Time_Series_Value'].shift(1)
+<span class="comment-line"># Create a feature with the value from two time steps ago (lag 2).</span>
+df_time_series['Value_Lag2'] = df_time_series['Time_Series_Value'].shift(2)
+            </code></pre>
+
+            <h3>2.3 Rolling Statistics</h3>
+            <p>Rolling (or moving) statistics involve calculating a specific statistic (like mean, sum, min, max) over a defined "window" of consecutive observations. This technique helps in smoothing out short-term fluctuations, revealing underlying trends, or identifying local patterns. For instance, a rolling mean can show the average behavior over the last N periods.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Calculate the 3-hour rolling mean of 'Time_Series_Value'.</span>
+df_time_series['Value_RollingMean_3hr'] = df_time_series['Time_Series_Value'].rolling(window=3).mean()
+<span class="comment-line"># Calculate the 3-hour rolling sum of 'Time_Series_Value'.</span>
+df_time_series['Value_RollingSum_3hr'] = df_time_series['Time_Series_Value'].rolling(window=3).sum()
+            </code></pre>
+        </section>
+
+        <section id="text-data">
+            <h2>3. Handling Text Data</h2>
+            <p>Unstructured text data, such as customer reviews or articles, needs significant preprocessing to be transformed into a numerical format that machine learning models can understand. This multi-step process typically involves breaking down the text, cleaning it, and then converting it into numerical feature vectors.</p>
+
+            <h3>3.1 Tokenization & Normalization</h3>
+            <p>The first step in text preprocessing is **tokenization**, which breaks down raw text into smaller, meaningful units (tokens) like words or sentences. Following tokenization, **normalization** standardizes the tokens. This includes **lowercasing** (to ensure 'Apple' and 'apple' are treated as the same word), **stop word removal** (eliminating common, less informative words like 'the', 'is', 'a' that add little semantic value), and **stemming** or **lemmatization** (reducing words to their base or root form to consolidate variations like 'running', 'runs', 'ran' to 'run').</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Select the first text entry from the DataFrame for demonstration.</span>
+sample_text = df['Text_Data'].iloc[0]
+
+<span class="comment-line"># Tokenize the text into individual words using NLTK's word_tokenize.</span>
+tokens_words = nltk.word_tokenize(sample_text)
+
+<span class="comment-line"># Convert all tokens to lowercase to ensure consistency.</span>
+tokens_lower = [word.lower() for word in tokens_words]
+
+<span class="comment-line"># Load English stop words from NLTK.</span>
+stop_words = set(stopwords.words('english'))
+<span class="comment-line"># Remove stop words and non-alphanumeric tokens.</span>
+tokens_cleaned = [word for word in tokens_lower if word.isalnum() and word not in stop_words]
+
+<span class="comment-line"># Initialize the Porter Stemmer.</span>
+stemmer = PorterStemmer()
+<span class="comment-line"># Apply stemming to reduce words to their root forms (e.g., 'running' -> 'run').</span>
+tokens_stemmed = [stemmer.stem(word) for word in tokens_cleaned]
+
+<span class="comment-line"># Initialize the WordNet Lemmatizer.</span>
+lemmatizer = WordNetLemmatizer()
+<span class="comment-line"># Apply lemmatization to reduce words to their base dictionary form (e.g., 'ran' -> 'run').</span>
+tokens_lemmatized = [lemmatizer.lemmatize(word) for word in tokens_cleaned]
+            </code></pre>
+
+            <h3>3.2 Text Vectorization</h3>
+            <p>After the text has been preprocessed (tokenized, normalized), it must be converted into numerical feature vectors that machine learning models can process. **Bag-of-Words (BoW)** models (implemented via `CountVectorizer`) represent text as the count of each word. **TF-IDF (Term Frequency-Inverse Document Frequency)** models (implemented via `TfidfVectorizer`) improve upon BoW by weighting word counts by their inverse document frequency, giving higher importance to words that are rare across the entire corpus but frequent in a specific document, thus highlighting more significant terms.</p>
+            <pre><code class="language-python">
+<span class="comment-line"># Preprocessing function to clean text for vectorization.</span>
+<span class="comment-line"># This combines lowercasing, tokenization, stop word removal, and lemmatization.</span>
+lemmatizer = WordNetLemmatizer()
+stop_words = set(stopwords.words('english'))
+df['Cleaned_Text'] = df['Text_Data'].apply(
+    lambda x: ' '.join([
+        lemmatizer.lemmatize(word.lower())
+        for word in nltk.word_tokenize(x)
+        if word.isalnum() and word.lower() not in stop_words
+    ])
+)
+
+<span class="comment-line"># Bag-of-Words (CountVectorizer): Converts text into a matrix of token counts.</span>
+<span class="comment-line"># Each row represents a document, each column a unique word, and values are counts.</span>
+vectorizer_count = CountVectorizer()
+X_counts = vectorizer_count.fit_transform(df['Cleaned_Text'])
+<span class="comment-line"># print(X_counts.toarray()) # Uncomment to see the resulting array (example output)</span>
+
+<span class="comment-line"># TF-IDF (TfidfVectorizer): Converts text into a matrix of TF-IDF scores.</span>
+<span class="comment-line"># This gives more weight to important words and less to common ones.</span>
+vectorizer_tfidf = TfidfVectorizer()
+X_tfidf = vectorizer_tfidf.fit_transform(df['Cleaned_Text'])
+<span class="comment-line"># print(X_tfidf.toarray()) # Uncomment to see the resulting array (example output)</span>
+            </code></pre>
+        </section>
+    </main>
+
+    <footer>
+        <p>&copy; 2025 Data Preprocessing Handbook. Built for learning purposes.</p>
+    </footer>
+</body>
+</html>

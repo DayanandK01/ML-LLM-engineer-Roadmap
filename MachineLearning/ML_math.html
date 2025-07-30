@@ -1,0 +1,1035 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Linear Algebra for ML: Interactive Guide</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
+
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+        }
+        .nav-link.active {
+            background-color: #ecfeff; /* cyan-50 */
+            color: #0891b2; /* cyan-600 */
+            font-weight: 600;
+        }
+        .content-card {
+            background-color: white;
+            border-radius: 0.75rem;
+            border: 1px solid #e2e8f0; /* slate-200 */
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            scroll-margin-top: 5rem; /* Adjust for sticky header height */
+        }
+        .content-card ul {
+            list-style-position: inside;
+            padding-left: 0.5rem;
+        }
+        .content-card ul li {
+            position: relative;
+            padding-left: 1.75rem;
+            margin-bottom: 0.75rem;
+        }
+        .content-card ul li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            top: 1px;
+            color: #0891b2; /* cyan-600 */
+            font-weight: 700;
+            font-size: 1rem;
+        }
+        /* Adjusted pre styles for Highlight.js */
+        pre code {
+            display: block; /* Ensures code block takes full width */
+            background-color: #1e293b; /* slate-800 - Highlight.js theme will override this mostly */
+            color: #e2e8f0; /* slate-200 */
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace; /* Common monospace fonts for code */
+            font-size: 0.875rem;
+        }
+        pre { /* The container for the code block */
+            position: relative; /* Needed for copy button positioning */
+            margin-bottom: 1.5rem; /* Add some space below code blocks */
+        }
+
+        /* MathJax styling for displayed equations */
+        .MathJax_Display {
+            overflow-x: auto;
+            overflow-y: hidden;
+            padding-bottom: 0.5em; /* Add some padding if equation is wide */
+            margin-top: 1em; /* Add some space around equations */
+            margin-bottom: 1em;
+        }
+        /* Centering for equations */
+        mjx-container[display="true"] {
+            display: block;
+            text-align: center;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #0891b2; /* cyan-600 */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            z-index: 5; /* Ensure button is above code */
+        }
+        .copy-button:hover {
+            background-color: #0e7490; /* cyan-700 */
+        }
+        .copied-message {
+            position: absolute;
+            top: 0.5rem;
+            right: 0.5rem;
+            background-color: #16a34a; /* green-600 */
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out;
+            z-index: 6; /* Ensure message is above button */
+        }
+        .copied-message.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="text-slate-700">
+
+    <header class="bg-white shadow-sm py-4 sticky top-0 z-10">
+        <div class="container mx-auto px-4 max-w-7xl">
+            <h1 class="text-3xl md:text-4xl font-bold text-slate-800 text-center">Linear Algebra & Calculus for Machine Learning</h1>
+            <p class="mt-2 text-md text-slate-600 text-center">Essential Concepts & Practical Examples</p>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 max-w-7xl flex flex-col md:flex-row gap-8">
+        <aside id="sidebar" class="md:w-1/4 lg:w-1/5 md:sticky top-20 self-start">
+            <nav class="bg-white p-4 rounded-xl border border-slate-200 shadow-md">
+                <h3 class="font-bold text-lg text-slate-800 mb-4">Concepts</h3>
+                <ul id="sidebar-nav" class="space-y-1">
+                    <li><a href="#intro" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Introduction</a></li>
+                    <li><a href="#vectors" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Vectors</a></li>
+                    <li><a href="#matrices" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Matrices</a></li>
+                    <li><a href="#singular-matrices" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Singular Matrices</a></li>
+                    <li><a href="#eigen-concepts" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Eigenvalues & Eigenvectors</a></li>
+                    <li><a href="#svd" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Singular Value Decomposition (SVD)</a></li>
+                    <li><a href="#derivatives" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Derivatives</a></li>
+                    <li><a href="#gradients" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Gradients</a></li>
+                    <li><a href="#chain-rule" class="nav-link block px-3 py-2 rounded-md text-slate-600 hover:bg-slate-100 transition-colors duration-200">Chain Rule</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <main id="main-content" class="md:w-3/4 lg:w-4/5">
+
+            <section id="intro" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Introduction to Linear Algebra & Calculus for ML</h2>
+                <p class="mb-4 text-slate-600">Linear Algebra and Calculus are the fundamental languages of machine learning. They provide the mathematical framework for representing data, performing transformations, and optimizing algorithms. Understanding their core concepts is crucial for truly grasping how ML models work under the hood, from simple linear regression to complex neural networks and dimensionality reduction techniques. This interactive guide will walk you through the essential components of Linear Algebra and Calculus relevant to Machine Learning, providing intuitive explanations and practical Python code examples using NumPy.</p>
+                <p class="text-slate-600">Explore the sections using the navigation on the left to delve into each concept.</p>
+            </section>
+
+            <section id="vectors" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Vectors</h2>
+                <p class="mb-4 text-slate-600">Intuitively, a vector is an ordered list of numbers. In machine learning, vectors are used to represent individual data points (e.g., features of a customer) or model parameters (like weights in a neural network). They possess both magnitude (length) and direction.</p>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Why Vectors Matter in ML:</h3>
+                <ul class="mb-6">
+                    <li><b>Representing Data Points:</b> Each data sample is often a vector of its features.</li>
+                    <li><b>Representing Model Parameters:</b> Weights and biases in models are often vectors.</li>
+                    <li><b>Direction and Magnitude:</b> Crucial for concepts like gradient descent (direction of optimization) and similarity measures.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (NumPy):</h3>
+                <pre id="code-vectors"><code class="language-python">
+import numpy as np
+
+# --- 1. Creating Vectors ---
+
+# A 1D array in NumPy is a vector.
+# By default, NumPy creates row vectors.
+
+# Example 1: A simple 1D vector (representing, say, a person's age, height, weight)
+vector_a = np.array([25, 175, 70])
+print("Vector A (Age, Height, Weight):", vector_a)
+print("Shape of Vector A:", vector_a.shape) # (3,) means 1D array with 3 elements
+
+# Example 2: Another 1D vector
+vector_b = np.array([10, 20, 30])
+print("\nVector B:", vector_b)
+print("Shape of Vector B:", vector_b.shape)
+
+# --- 2. Vector Operations ---
+
+# 2.1. Addition and Subtraction (element-wise)
+# Vectors must have the same shape for these operations.
+vector_sum = vector_a + vector_b
+print("\nVector A + Vector B (Element-wise Sum):", vector_sum)
+
+vector_diff = vector_a - vector_b
+print("Vector A - Vector B (Element-wise Difference):", vector_diff)
+
+# 2.2. Scalar Multiplication (multiplying by a single number)
+# Multiplies each element of the vector by the scalar.
+scalar = 2
+scaled_vector_a = vector_a * scalar
+print("\nVector A * 2 (Scalar Multiplication):", scaled_vector_a)
+
+# 2.3. Dot Product (crucial in ML!)
+# The dot product of two vectors is a single number.
+# It's calculated by multiplying corresponding elements and summing the results.
+# For vectors A = [a1, a2, a3] and B = [b1, b2, b3], dot product = (a1*b1 + a2*b2 + a3*b3)
+# It measures how "aligned" two vectors are.
+# In ML, it's used extensively in calculating weighted sums (e.g., neuron activations).
+dot_product_ab = np.dot(vector_a, vector_b)
+print("\nDot Product of Vector A and Vector B:", dot_product_ab)
+
+# Example: If vector_a represents features and vector_b represents weights,
+# the dot product is a weighted sum of features.
+features = np.array([1.0, 0.5, 2.0]) # e.g., input features to a neuron
+weights = np.array([0.8, -0.2, 0.3]) # e.g., weights of a neuron
+weighted_sum = np.dot(features, weights)
+print(f"\nWeighted sum (features dot weights): {weighted_sum}")
+
+# 2.4. Magnitude (Length) of a Vector
+# Calculated using the Euclidean norm (square root of the sum of squared elements).
+# For A = [a1, a2, a3], magnitude = sqrt(a1^2 + a2^2 + a3^2)
+magnitude_a = np.linalg.norm(vector_a)
+print("\nMagnitude (Length) of Vector A:", magnitude_a)
+
+# --- 3. Reshaping Vectors (important for consistency in operations) ---
+# Sometimes you need to explicitly define a column vector or row vector for matrix operations.
+# (3,) is a 1D array, which NumPy treats flexibly.
+# (3,1) is a 2D array with 3 rows, 1 column (explicit column vector).
+# (1,3) is a 2D array with 1 row, 3 columns (explicit row vector).
+
+column_vector = vector_a.reshape(3, 1)
+print("\nVector A reshaped as a Column Vector:\n", column_vector)
+print("Shape of Column Vector:", column_vector.shape)
+
+row_vector_explicit = vector_a.reshape(1, 3)
+print("\nVector A reshaped as an explicit Row Vector:\n", row_vector_explicit)
+print("Shape of Explicit Row Vector:", row_vector_explicit.shape)
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-vectors', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>Vectors are ordered lists of numbers, representing points or features.</li>
+                    <li>The **dot product** is fundamental in ML, representing weighted sums or similarity.</li>
+                    <li>**Magnitude** gives you the "length" or "strength" of a vector.</li>
+                </ul>
+            </section>
+
+            <section id="matrices" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Matrices</h2>
+                <p class="mb-4 text-slate-600">A matrix is a rectangular array of numbers, organized into rows and columns. It's essentially a collection of vectors. In machine learning, entire datasets are often represented as matrices, where rows are data samples and columns are features.</p>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Why Matrices Matter in ML:</h3>
+                <ul class="mb-6">
+                    <li><b>Representing Datasets:</b> An entire dataset is typically a matrix.</li>
+                    <li><b>Representing Transformations:</b> Used to perform linear transformations on vectors.</li>
+                    <li><b>Neural Network Layers:</b> Weights connecting layers in a neural network are matrices; matrix multiplication is core to neural network computations.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (NumPy):</h3>
+                <pre id="code-matrices"><code class="language-python">
+import numpy as np
+
+# --- 1. Creating Matrices ---
+
+# A 2D array in NumPy is a matrix.
+# You create it by passing a list of lists.
+
+# Example 1: A 2x3 matrix (2 rows, 3 columns)
+matrix_a = np.array([
+    [1, 2, 3],
+    [4, 5, 6]
+])
+print("Matrix A:\n", matrix_a)
+print("Shape of Matrix A:", matrix_a.shape) # (rows, columns)
+
+# Example 2: A 3x2 matrix (3 rows, 2 columns)
+matrix_b = np.array([
+    [7, 8],
+    [9, 10],
+    [11, 12]
+])
+print("\nMatrix B:\n", matrix_b)
+print("Shape of Matrix B:", matrix_b.shape)
+
+# --- 2. Matrix Operations ---
+
+# 2.1. Addition and Subtraction (element-wise)
+# Matrices must have the exact same shape for these operations.
+matrix_c = np.array([
+    [10, 20, 30],
+    [40, 50, 60]
+])
+matrix_sum = matrix_a + matrix_c
+print("\nMatrix A + Matrix C (Element-wise Sum):\n", matrix_sum)
+
+matrix_diff = matrix_c - matrix_a
+print("Matrix C - Matrix A (Element-wise Difference):\n", matrix_diff)
+
+# 2.2. Scalar Multiplication
+# Multiplies each element of the matrix by the scalar.
+scalar = 3
+scaled_matrix_a = matrix_a * scalar
+print("\nMatrix A * 3 (Scalar Multiplication):\n", scaled_matrix_a)
+
+# 2.3. Transpose of a Matrix
+# Rows become columns, and columns become rows.
+# If A is m x n, A_transpose is n x m.
+matrix_a_transpose = matrix_a.T
+print("\nTranspose of Matrix A:\n", matrix_a_transpose)
+print("Shape of Transpose of Matrix A:", matrix_a_transpose.shape)
+
+# 2.4. Matrix Multiplication (VERY IMPORTANT in ML!)
+# This is NOT element-wise multiplication.
+# For A * B, the number of columns in A must equal the number of rows in B.
+# If A is (m x n) and B is (n x p), the result C will be (m x p).
+# Each element C_ij is the dot product of row i from A and column j from B.
+
+# Example: Matrix A (2x3) * Matrix B (3x2) -> Result will be (2x2)
+# A = [[1, 2, 3],   B = [[7, 8],
+#       [4, 5, 6]]        [9, 10],
+#                          [11, 12]]
+
+# Result[0,0] = (1*7) + (2*9) + (3*11) = 7 + 18 + 33 = 58
+# Result[0,1] = (1*8) + (2*10) + (3*12) = 8 + 20 + 36 = 64
+# Result[1,0] = (4*7) + (5*9) + (6*11) = 28 + 45 + 66 = 139
+# Result[1,1] = (4*8) + (5*10) + (6*12) = 32 + 50 + 72 = 154
+
+matrix_product_ab = np.dot(matrix_a, matrix_b)
+print("\nMatrix A * Matrix B (Matrix Multiplication):\n", matrix_product_ab)
+print("Shape of Matrix Product:", matrix_product_ab.shape)
+
+# Example in ML: Data matrix * Weight matrix
+# Imagine a dataset of 10 samples, each with 5 features (10x5 matrix)
+# And a layer of a neural network with 3 neurons, each having 5 weights (5x3 matrix)
+data_samples = np.random.rand(10, 5) # 10 samples, 5 features each
+weights_layer = np.random.rand(5, 3) # 5 weights for each of 3 neurons
+output_activations = np.dot(data_samples, weights_layer)
+print(f"\nExample ML: Data (10x5) dot Weights (5x3) -> Output Activations ({output_activations.shape[0]}x{output_activations.shape[1]}):\n", output_activations)
+
+
+# --- 3. Identity Matrix ---
+# A square matrix (same number of rows and columns) with 1s on the main diagonal and 0s elsewhere.
+# Acts like the number '1' in scalar multiplication (A * I = A).
+identity_matrix = np.eye(3) # Creates a 3x3 identity matrix
+print("\n3x3 Identity Matrix:\n", identity_matrix)
+
+# --- 4. Inverse of a Matrix ---
+# For a square matrix A, its inverse A_inv is such that A * A_inv = I (Identity Matrix).
+# Only square, non-singular (determinant != 0) matrices have an inverse.
+# Used in solving systems of linear equations and some optimization problems.
+square_matrix = np.array([
+    [4, 7],
+    [2, 6]
+])
+print("\nSquare Matrix for Inverse:\n", square_matrix)
+
+try:
+    inverse_matrix = np.linalg.inv(square_matrix)
+    print("Inverse of Square Matrix:\n", inverse_matrix)
+    # Verify: square_matrix * inverse_matrix should be close to identity
+    print("Verification (Matrix * Inverse):\n", np.dot(square_matrix, inverse_matrix))
+except np.linalg.LinAlgError:
+    print("Inverse does NOT exist (Matrix is singular).")
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-matrices', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>Matrices are rectangular arrays, ideal for representing datasets.</li>
+                    <li>**Matrix multiplication** is a core operation for transformations and neural networks.</li>
+                    <li>The **transpose**, **identity matrix**, and **inverse matrix** are important concepts.</li>
+                </ul>
+            </section>
+
+            <section id="singular-matrices" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Singular Matrices & Determinants</h2>
+                <p class="mb-4 text-slate-600">A singular matrix is a square matrix that does not have a multiplicative inverse. This means the linear transformation it represents "collapses" or "flattens" space, losing some information. Understanding singularity is crucial as many algorithms require invertible matrices.</p>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Key Properties:</h3>
+                <ul class="mb-6">
+                    <li>Its **determinant is zero**.</li>
+                    <li>It is **non-invertible** (its inverse does not exist).</li>
+                    <li>Its rows (or columns) are **linearly dependent**.</li>
+                    <li>Its **rank** is less than its dimension.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">How to Determine Singularity:</h3>
+                <ol class="list-decimal list-inside mb-6 text-slate-600">
+                    <li class="mb-2">**Using the Determinant:** A square matrix A is singular if and only if $\text{det}(A) = 0$.</li>
+                    <li class="mb-2">**Checking the Rank:** For an $n \times n$ matrix, if its rank is less than $n$, it is singular.</li>
+                    <li class="mb-2">**Attempting Inverse:** Trying to compute the inverse will result in an error.</li>
+                </ol>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (NumPy):</h3>
+                <pre id="code-singular-matrices"><code class="language-python">
+import numpy as np
+
+# --- 1. Example of a Non-Singular Matrix ---
+non_singular_matrix = np.array([
+    [4, 7],
+    [2, 6]
+])
+print("--- Non-Singular Matrix Example ---")
+print("Matrix:\n", non_singular_matrix)
+
+# Calculate the determinant
+det_non_singular = np.linalg.det(non_singular_matrix)
+print("Determinant:", det_non_singular)
+
+# Check if determinant is close to zero (due to floating point precision)
+if np.isclose(det_non_singular, 0):
+    print("Conclusion (Determinant): Matrix is singular.")
+else:
+    print("Conclusion (Determinant): Matrix is non-singular (invertible).")
+
+# Calculate the rank
+rank_non_singular = np.linalg.matrix_rank(non_singular_matrix)
+print("Rank:", rank_non_singular)
+print("Dimension (n):", non_singular_matrix.shape[0])
+if rank_non_singular < non_singular_matrix.shape[0]:
+    print("Conclusion (Rank): Matrix is singular (rank < dimension).")
+else:
+    print("Conclusion (Rank): Matrix is non-singular (rank = dimension).")
+
+# Try to compute the inverse
+try:
+    inverse_non_singular = np.linalg.inv(non_singular_matrix)
+    print("Inverse exists:\n", inverse_non_singular)
+except np.linalg.LinAlgError:
+    print("Inverse does NOT exist (Matrix is singular).")
+
+
+# --- 2. Example of a Singular Matrix ---
+# The second row is twice the first row, making them linearly dependent.
+singular_matrix = np.array([
+    [1, 2],
+    [2, 4]
+])
+print("\n--- Singular Matrix Example ---")
+print("Matrix:\n", singular_matrix)
+
+# Calculate the determinant
+det_singular = np.linalg.det(singular_matrix)
+print("Determinant:", det_singular)
+
+# Check if determinant is close to zero
+if np.isclose(det_singular, 0):
+    print("Conclusion (Determinant): Matrix is singular.")
+else:
+    print("Conclusion (Determinant): Matrix is non-singular (invertible).")
+
+# Calculate the rank
+rank_singular = np.linalg.matrix_rank(singular_matrix)
+print("Rank:", rank_singular)
+print("Dimension (n):", singular_matrix.shape[0])
+if rank_singular < singular_matrix.shape[0]:
+    print("Conclusion (Rank): Matrix is singular (rank < dimension).")
+else:
+    print("Conclusion (Rank): Matrix is non-singular (rank = dimension).")
+
+# Try to compute the inverse
+try:
+    inverse_singular = np.linalg.inv(singular_matrix)
+    print("Inverse exists:\n", inverse_singular)
+except np.linalg.LinAlgError as e:
+    print(f"Inverse does NOT exist (Matrix is singular): {e}")
+
+
+# --- 3. Another Singular Matrix Example (with a row of zeros) ---
+matrix_with_zero_row = np.array([
+    [1, 2, 3],
+    [0, 0, 0],
+    [4, 5, 6]
+])
+print("\n--- Matrix with Zero Row Example ---")
+print("Matrix:\n", matrix_with_zero_row)
+det_zero_row = np.linalg.det(matrix_with_zero_row)
+print("Determinant:", det_zero_row)
+if np.isclose(det_zero_row, 0):
+    print("Conclusion: Matrix is singular.")
+else:
+    print("Conclusion: Matrix is non-singular.")
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-singular-matrices', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>A singular matrix is a square matrix without an inverse.</li>
+                    <li>Its **determinant is zero**.</li>
+                    <li>Its rows/columns are **linearly dependent**.</li>
+                </ul>
+            </section>
+
+            <section id="eigen-concepts" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Eigenvalues & Eigenvectors</h2>
+                <p class="mb-4 text-slate-600">Eigenvectors are special vectors that, when transformed by a matrix, only change in magnitude (length) but not in direction. The scaling factor by which they are stretched or shrunk is called the eigenvalue. This concept is vital for understanding how matrices transform space.</p>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Why Eigen-Concepts Matter in ML:</h3>
+                <ul class="mb-6">
+                    <li><b>Principal Component Analysis (PCA):</b> Eigenvectors define the principal components (new axes of maximum variance), and eigenvalues indicate the amount of variance captured along these components.</li>
+                    <li><b>Understanding Transformations:</b> They reveal the fundamental properties of linear transformations.</li>
+                    <li><b>Singular Matrices:</b> A singular matrix will always have at least one eigenvalue of zero.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (NumPy):</h3>
+                <pre id="code-eigen-concepts"><code class="language-python">
+import numpy as np
+
+# --- 1. Example Matrix ---
+# This matrix represents a linear transformation.
+matrix_a = np.array([
+    [3, 2],
+    [1, 4]
+])
+print("Original Matrix A:\n", matrix_a)
+
+# --- 2. Calculating Eigenvalues and Eigenvectors ---
+# np.linalg.eig() returns two things:
+# 1. eigenvalues: A 1D array of eigenvalues.
+# 2. eigenvectors: A 2D array where each column is an eigenvector.
+#    The eigenvector at column `i` corresponds to the eigenvalue at `eigenvalues[i]`.
+
+eigenvalues, eigenvectors = np.linalg.eig(matrix_a)
+
+print("\nEigenvalues:", eigenvalues)
+print("Eigenvectors (columns are eigenvectors):\n", eigenvectors)
+
+# --- 3. Verification (A * v = lambda * v) ---
+# Let's pick the first eigenvalue and its corresponding eigenvector
+# and verify the relationship.
+
+first_eigenvalue = eigenvalues[0]
+first_eigenvector = eigenvectors[:, 0] # Get the first column
+
+print(f"\n--- Verification for First Eigenpair ---")
+print(f"First Eigenvalue (λ): {first_eigenvalue}")
+print(f"First Eigenvector (v):\n {first_eigenvector}")
+
+# Calculate A * v
+Av = np.dot(matrix_a, first_eigenvector)
+print(f"A * v:\n {Av}")
+
+# Calculate λ * v
+lambda_v = first_eigenvalue * first_eigenvector
+print(f"λ * v:\n {lambda_v}")
+
+# Check if A * v is approximately equal to λ * v
+# Use np.allclose due to potential floating point inaccuracies
+print(f"Are A*v and λ*v approximately equal? {np.allclose(Av, lambda_v)}")
+
+
+# --- 4. Example with a Singular Matrix ---
+# Recall from our last discussion, a singular matrix has a determinant of 0.
+# It also has at least one eigenvalue of 0.
+singular_matrix = np.array([
+    [1, 2],
+    [2, 4]
+])
+print("\n--- Singular Matrix Example ---")
+print("Matrix:\n", singular_matrix)
+
+singular_eigenvalues, singular_eigenvectors = np.linalg.eig(singular_matrix)
+print("Eigenvalues of Singular Matrix:", singular_eigenvalues)
+print("Eigenvectors of Singular Matrix:\n", singular_eigenvectors)
+
+# Notice one of the eigenvalues is very close to zero (e.g., 2.22e-16),
+# which is numerically equivalent to zero due to floating point precision.
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-eigen-concepts', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>Eigenvectors maintain their direction when transformed by a matrix.</li>
+                    <li>Eigenvalues are the scaling factors for eigenvectors.</li>
+                    <li>They are the backbone of **PCA** for dimensionality reduction.</li>
+                </ul>
+            </section>
+
+            <section id="svd" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Singular Value Decomposition (SVD)</h2>
+                <p class="mb-4 text-slate-600">SVD is a powerful matrix decomposition technique that factorizes any matrix (not just square ones!) into three simpler matrices: $A = U \Sigma V^T$. It breaks down a complex transformation into a sequence of rotations and scaling, revealing the inherent structure of the data.</p>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Why SVD Matters in ML:</h3>
+                <ul class="mb-6">
+                    <li><b>Principal Component Analysis (PCA):</b> SVD is the numerical method used to compute PCA.</li>
+                    <li><b>Dimensionality Reduction:</b> By keeping only the largest singular values, you can create a lower-rank approximation of the original data, effectively reducing its dimensionality.</li>
+                    <li><b>Recommender Systems:</b> Used in matrix factorization for collaborative filtering.</li>
+                    <li><b>Image Compression & Noise Reduction:</b> Approximating data with fewer components.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (NumPy):</h3>
+                <pre id="code-svd"><code class="language-python">
+import numpy as np
+
+# --- 1. Example Matrix ---
+# Let's use a non-square matrix to show SVD's versatility.
+# This could represent a dataset with 4 samples and 3 features.
+matrix_a = np.array([
+    [1, 2, 3],
+    [4, 5, 6],
+    [7, 8, 9],
+    [10, 11, 12]
+])
+print("Original Matrix A (4x3):\n", matrix_a)
+print("Shape of A:", matrix_a.shape)
+
+# --- 2. Performing SVD ---
+# np.linalg.svd() returns U, s, Vh
+# s is a 1D array of singular values (the diagonal elements of Sigma)
+# Vh is V_transpose
+U, s, Vh = np.linalg.svd(matrix_a)
+
+print("\nU (Left Singular Vectors - 4x4 orthogonal matrix):\n", U)
+print("Shape of U:", U.shape)
+
+print("\nSingular Values (s - 1D array, diagonal of Sigma):\n", s)
+# Note: s is a 1D array. To reconstruct Sigma, we need to make it a diagonal matrix
+# with the correct dimensions.
+
+# Create a zero matrix with the shape of A
+Sigma = np.zeros(matrix_a.shape)
+# Fill the diagonal with the singular values
+Sigma[:matrix_a.shape[1], :matrix_a.shape[1]] = np.diag(s)
+
+print("\nReconstructed Sigma matrix (4x3):\n", Sigma)
+
+print("\nVh (Right Singular Vectors Transposed - 3x3 orthogonal matrix):\n", Vh)
+print("Shape of Vh:", Vh.shape)
+
+# Perform the matrix multiplication to reconstruct A
+reconstructed_a = U @ Sigma @ Vh # Using '@' for matrix multiplication (Python 3.5+)
+# Or use np.dot(U, np.dot(Sigma, Vh))
+print("\nReconstructed Matrix A:\n", reconstructed_a)
+
+# Check if the reconstruction is close to the original matrix
+print(f"Is reconstructed A approximately equal to original A? {np.allclose(matrix_a, reconstructed_a)}")
+
+# --- 4. Dimensionality Reduction / Low-Rank Approximation using SVD ---
+# We can approximate the original matrix by keeping only the top 'k' singular values.
+# This is the core idea behind PCA for data compression/dimensionality reduction.
+
+k = 2 # Let's keep the top 2 singular values (and corresponding vectors)
+
+# Truncate U, s, and Vh
+U_k = U[:, :k]
+s_k = s[:k]
+Vh_k = Vh[:k, :]
+
+# Reconstruct a lower-rank approximation
+Sigma_k = np.zeros((k, k))
+Sigma_k[:k, :k] = np.diag(s_k)
+
+# Low-rank approximation: A_approx = U_k @ Sigma_k @ Vh_k
+approx_a = U_k @ Sigma_k @ Vh_k
+print(f"\n--- Low-Rank Approximation of A (using k={k} singular values) ---")
+print("Approximate Matrix A:\n", approx_a)
+
+# Compare with original (visually and numerically)
+print(f"Difference between original and approximate A:\n", matrix_a - approx_a)
+print(f"Mean Absolute Error of approximation: {np.mean(np.abs(matrix_a - approx_a))}")
+
+# The columns of V (Vh.T) are the principal components (directions of most variance)
+print("\nPrincipal Components (columns of V, i.e., rows of Vh):\n", Vh.T)
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-svd', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>SVD decomposes any matrix into three simpler matrices ($U, \Sigma, V^T$).</li>
+                    <li>Singular values in $\Sigma$ indicate the "importance" of dimensions.</li>
+                    <li>It's the foundation for **PCA** and used for dimensionality reduction, compression, and noise reduction.</li>
+                </ul>
+            </section>
+
+            <section id="derivatives" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Calculus: Derivatives</h2>
+                <p class="mb-4 text-slate-600">A derivative measures the instantaneous rate of change of a function with respect to one of its variables. Conceptually, it tells you the slope of the tangent line to the function's graph at any given point. In machine learning, derivatives are used to understand how small changes in input (or parameters) affect the output (or loss).</p>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Why Derivatives Matter in ML:</h3>
+                <ul class="mb-6">
+                    <li><b>Rate of Change:</b> Understanding how quickly a function's value changes.</li>
+                    <li><b>Optimization:</b> Derivatives point to the direction of steepest ascent or descent, fundamental for algorithms like Gradient Descent.</li>
+                    <li><b>Backpropagation:</b> The core algorithm for training neural networks relies heavily on calculating derivatives (specifically, gradients) through the network.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Core Concepts:</h3>
+                <ul class="mb-6">
+                    <li><b>Limits:</b> The foundation of derivatives, defining the value a function approaches.</li>
+                    <li><b>Rules of Differentiation:</b> Power rule, product rule, quotient rule, chain rule.</li>
+                    <li><b>Partial Derivatives:</b> For functions with multiple variables, a partial derivative calculates the rate of change with respect to one variable, holding others constant. This leads directly into gradients.</li>
+                </ul>
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (Symbolic Differentiation with SymPy):</h3>
+                <pre id="code-derivatives"><code class="language-python">
+import sympy
+
+# Define a symbolic variable
+x = sympy.Symbol('x')
+
+# Define a function
+f_x = x**2 + 3*x + 5
+print(f"Function f(x): {f_x}")
+
+# Calculate the derivative of f(x) with respect to x
+df_dx = sympy.diff(f_x, x)
+print(f"Derivative df/dx: {df_dx}")
+
+# Evaluate the derivative at a specific point, e.g., x=2
+val_at_2 = df_dx.subs(x, 2)
+print(f"Derivative at x=2: {val_at_2}")
+
+# Example with multiple variables for partial derivatives (leading to gradients)
+y = sympy.Symbol('y')
+g_xy = x**2 * y + 3*x + y**3
+print(f"\nFunction g(x, y): {g_xy}")
+
+# Partial derivative with respect to x
+dg_dx = sympy.diff(g_xy, x)
+print(f"Partial derivative dg/dx: {dg_dx}")
+
+# Partial derivative with respect to y
+dg_dy = sympy.diff(g_xy, y)
+print(f"Partial derivative dg/dy: {dg_dy}")
+
+# These partial derivatives are the components of the gradient!
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-derivatives', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>Derivatives measure the **rate of change** (slope) of a function.</li>
+                    <li>They are essential for **optimization** and understanding sensitivity in ML models.</li>
+                    <li>**Partial derivatives** are the building blocks for gradients in multi-variable functions.</li>
+                </ul>
+            </section>
+
+            <section id="gradients" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Calculus: Gradients</h2>
+                <p class="mb-4 text-slate-600">While a derivative tells us the rate of change of a single-variable function, a **gradient** is its multi-variable generalization. For a scalar-valued function of multiple variables, the gradient is a vector that points in the direction of the *steepest ascent* of the function. Its magnitude tells us how steep that ascent is.</p>
+                <p class="mb-4 text-slate-600">In machine learning, we often work with functions (like loss functions) that depend on many parameters. Gradients are indispensable for optimizing these functions, especially in algorithms like Gradient Descent, where we iteratively move in the direction opposite to the gradient to find the minimum.</p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Intuitive Understanding:</h3>
+                <p class="mb-4 text-slate-600">Imagine you're standing on a mountain. If you want to climb to the peak as fast as possible, you'd walk in the direction that feels steepest uphill. That "steepest uphill" direction is precisely what the **gradient** tells you. Conversely, to descend fastest, you'd walk in the opposite direction of the gradient.</p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Definition and Notation:</h3>
+                <p class="mb-4 text-slate-600 text-center font-mono">
+                    $$\nabla f = \begin{pmatrix} \frac{\partial f}{\partial x_1} \\ \frac{\partial f}{\partial x_2} \\ \vdots \\ \frac{\partial f}{\partial x_n} \end{pmatrix}$$
+                </p>
+                <p class="mb-4 text-slate-600">For a function of two variables, $f(x, y)$:</p>
+                <p class="mb-4 text-slate-600 text-center font-mono">
+                    $$\nabla f(x, y) = \begin{pmatrix} \frac{\partial f}{\partial x} \\ \frac{\partial f}{\partial y} \end{pmatrix}$$
+                </p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Calculating Gradients:</h3>
+                <p class="mb-4 text-slate-600">To calculate the gradient, you compute the partial derivative of the function with respect to each variable and then assemble them into a vector.</p>
+
+                <h4 class="text-lg font-semibold text-slate-700 mb-2">Example 1: Function of two variables</h4>
+                <p class="mb-4 text-slate-600">Let $f(x, y) = x^2 + 3xy + y^3$.</p>
+                <pre><code class="language-python">
+# Partial derivative with respect to x:
+# ∂f/∂x = 2x + 3y
+
+# Partial derivative with respect to y:
+# ∂f/∂y = 3x + 3y^2
+
+# Gradient:
+# ∇f(x, y) = (2x + 3y, 3x + 3y^2)
+                </code></pre>
+
+                <h4 class="text-lg font-semibold text-slate-700 mb-2">Example 2: Function of three variables</h4>
+                <p class="mb-4 text-slate-600">Let $g(x, y, z) = e^x \sin(y) + z^2$.</p>
+                <pre><code class="language-python">
+# Partial derivative with respect to x:
+# ∂g/∂x = e^x sin(y)
+
+# Partial derivative with respect to y:
+# ∂g/∂y = e^x cos(y)
+
+# Partial derivative with respect to z:
+# ∂g/∂z = 2z
+
+# Gradient:
+# ∇g(x, y, z) = (e^x sin(y), e^x cos(y), 2z)
+                </code></pre>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Gradients in Machine Learning:</h3>
+                <p class="mb-4 text-slate-600">In machine learning, we often have a **loss function** (or cost function) that we want to minimize. This loss function typically depends on the parameters (weights and biases) of our model. Let's say our loss function is $L(\mathbf{w})$, where $\mathbf{w}$ represents all the parameters.</p>
+                <p class="mb-4 text-slate-600">Our goal is to find the values of $\mathbf{w}$ that minimize $L(\mathbf{w})$. This is where gradients come in:</p>
+                <ul class="mb-6">
+                    <li>The **gradient of the loss function**, $\nabla L(\mathbf{w})$, tells us the direction in which the loss function *increases most rapidly*.</li>
+                    <li>To minimize the loss, we want to move in the *opposite* direction of the gradient. This is the core idea behind **Gradient Descent**.</li>
+                </ul>
+                <p class="mb-4 text-slate-600 text-center font-mono">
+                    $$\mathbf{w}_{\text{new}} = \mathbf{w}_{\text{old}} - \eta \nabla L(\mathbf{w}_{\text{old}})$$
+                </p>
+                <p class="mb-4 text-slate-600">Where $\eta$ (eta) is the **learning rate**, a small positive scalar that determines the step size we take in the direction opposite to the gradient.</p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (Numerical Gradient with NumPy):</h3>
+                <p class="mb-4 text-slate-600">While symbolic differentiation is great for understanding, in practice, especially with complex neural networks, we use numerical methods or automatic differentiation (like in TensorFlow/PyTorch) to compute gradients. Here's a simple numerical example for a 2D function.</p>
+                <pre id="code-gradients"><code class="language-python">
+import numpy as np
+
+# Define a simple 2D function (e.g., a parabolic bowl)
+def f(x, y):
+    return x**2 + y**2
+
+# Point at which to calculate the gradient
+x_val = 1.0
+y_val = 2.0
+point = np.array([x_val, y_val])
+
+# Small change (epsilon) for numerical approximation
+epsilon = 1e-4
+
+# --- Calculate partial derivative with respect to x ---
+# f(x + epsilon, y)
+f_plus_x = f(x_val + epsilon, y_val)
+# f(x - epsilon, y)
+f_minus_x = f(x_val - epsilon, y_val)
+# (f(x + epsilon, y) - f(x - epsilon, y)) / (2 * epsilon)
+partial_x = (f_plus_x - f_minus_x) / (2 * epsilon)
+
+# --- Calculate partial derivative with respect to y ---
+# f(x, y + epsilon)
+f_plus_y = f(x_val, y_val + epsilon)
+# f(x, y - epsilon)
+f_minus_y = f(x_val, y_val - epsilon)
+# (f(x, y + epsilon) - f(x, y - epsilon)) / (2 * epsilon)
+partial_y = (f_plus_y - f_minus_y) / (2 * epsilon)
+
+# The gradient vector
+numerical_gradient = np.array([partial_x, partial_y])
+
+print(f"Function: f(x, y) = x^2 + y^2")
+print(f"Point (x, y): ({x_val}, {y_val})")
+print(f"Numerical Gradient at ({x_val}, {y_val}): {numerical_gradient}")
+
+# Analytical (exact) gradient for f(x, y) = x^2 + y^2 is (2x, 2y)
+analytical_gradient = np.array([2 * x_val, 2 * y_val])
+print(f"Analytical Gradient at ({x_val}, {y_val}): {analytical_gradient}")
+
+print(f"Difference (Numerical vs. Analytical): {np.abs(numerical_gradient - analytical_gradient)}")
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-gradients', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>A **gradient** is a vector of partial derivatives, pointing in the direction of the steepest increase of a multi-variable function.</li>
+                    <li>It's the cornerstone of **optimization algorithms** like Gradient Descent, used to minimize loss functions in machine learning.</li>
+                    <li>Moving **opposite** to the gradient direction helps find the function's minimum.</li>
+                </ul>
+            </section>
+
+            <section id="chain-rule" class="content-card">
+                <h2 class="text-2xl font-bold text-slate-800 mb-4">Calculus: The Chain Rule</h2>
+                <p class="mb-4 text-slate-600">The Chain Rule is a fundamental rule in calculus for differentiating composite functions. A composite function is a function of a function, like $f(g(x))$. The Chain Rule tells us how to find the derivative of such a function by multiplying the derivatives of the outer and inner functions.</p>
+                <p class="mb-4 text-slate-600">This rule is absolutely crucial in machine learning, particularly for **training neural networks via backpropagation**. Neural networks are essentially very long chains of composite functions, and the Chain Rule allows us to efficiently calculate the gradients of the loss function with respect to every single weight and bias in the network, no matter how deep it is.</p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Formula and Intuition:</h3>
+                <p class="mb-4 text-slate-600">If $y$ is a function of $u$, and $u$ is a function of $x$ (i.e., $y = f(u)$ and $u = g(x)$, so $y = f(g(x))$), then the derivative of $y$ with respect to $x$ is:</p>
+                <p class="mb-4 text-slate-600 text-center font-mono">
+                    $$\frac{dy}{dx} = \frac{dy}{du} \cdot \frac{du}{dx}$$
+                </p>
+                <p class="mb-4 text-slate-600">Intuitively, it means that the rate of change of $y$ with respect to $x$ is found by multiplying the rate of change of $y$ with respect to its immediate input ($u$), by the rate of change of that immediate input ($u$) with respect to $x$. It's like a cascade of dependencies.</p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Generalization to Multivariable Functions (Backpropagation):</h3>
+                <p class="mb-4 text-slate-600">In neural networks, we deal with functions of many variables. The Chain Rule extends to multivariable functions using partial derivatives and matrix/vector calculus. If a loss $L$ depends on an output $y$, which in turn depends on a hidden layer's activation $h$, which depends on weights $W$, we can write:</p>
+                <p class="mb-4 text-slate-600 text-center font-mono">
+                    $$\frac{\partial L}{\partial W} = \frac{\partial L}{\partial y} \cdot \frac{\partial y}{\partial h} \cdot \frac{\partial h}{\partial W}$$
+                </p>
+                <p class="mb-4 text-slate-600">This is a simplified view of how gradients are propagated backward through a neural network, layer by layer, enabling the model to learn by updating its parameters.</p>
+
+                <h3 class="text-xl font-semibold text-slate-700 mb-3">Python Example (Symbolic Differentiation with SymPy):</h3>
+                <pre id="code-chain-rule"><code class="language-python">
+import sympy
+
+# Define symbolic variables
+x, u = sympy.symbols('x u')
+
+# Define the inner function: u = g(x) = x^2
+g_x = x**2
+print(f"Inner function g(x): {g_x}")
+
+# Define the outer function: y = f(u) = sin(u)
+f_u = sympy.sin(u)
+print(f"Outer function f(u): {f_u}")
+
+# Form the composite function: y = f(g(x)) = sin(x^2)
+y = f_u.subs(u, g_x)
+print(f"Composite function y = f(g(x)): {y}")
+
+# --- 1. Calculate derivative using the Chain Rule manually ---
+# dy/du
+dy_du = sympy.diff(f_u, u)
+print(f"\ndy/du: {dy_du}")
+
+# du/dx
+du_dx = sympy.diff(g_x, x)
+print(f"du/dx: {du_dx}")
+
+# dy/dx = (dy/du) * (du/dx)
+dy_dx_chain_rule = dy_du.subs(u, g_x) * du_dx # Substitute u back with x^2 in dy/du
+print(f"dy/dx (using Chain Rule formula): {dy_dx_chain_rule}")
+
+# --- 2. Verify with direct differentiation using SymPy ---
+# SymPy automatically applies the Chain Rule when differentiating composite functions
+dy_dx_direct = sympy.diff(y, x)
+print(f"dy/dx (direct differentiation by SymPy): {dy_dx_direct}")
+
+# Check if both methods yield the same result
+print(f"Are results equal? {dy_dx_chain_rule == dy_dx_direct}")
+
+# --- Example for a slightly more complex chain (e.g., related to neural networks) ---
+# Let z = h(y), y = g(x)
+# We want dz/dx
+
+# Define variables
+x_nn, y_nn, z_nn = sympy.symbols('x_nn y_nn z_nn')
+
+# y = g(x) = sigmoid(x) where sigmoid(x) = 1 / (1 + exp(-x))
+# This is a common activation function
+g_x_nn = 1 / (1 + sympy.exp(-x_nn))
+print(f"\nFunction g(x_nn): {g_x_nn}")
+
+# z = h(y) = y^2 (simple loss function, e.g., squared error)
+h_y_nn = y_nn**2
+print(f"Function h(y_nn): {h_y_nn}")
+
+# Composite function z = h(g(x))
+z_composite = h_y_nn.subs(y_nn, g_x_nn)
+print(f"Composite function z(x_nn): {z_composite}")
+
+# Calculate dz/dx using Chain Rule: (dz/dy) * (dy/dx)
+dz_dy_nn = sympy.diff(h_y_nn, y_nn)
+dy_dx_nn = sympy.diff(g_x_nn, x_nn)
+
+# Substitute y_nn back into dz_dy_nn using g_x_nn
+chain_rule_result_nn = dz_dy_nn.subs(y_nn, g_x_nn) * dy_dx_nn
+print(f"dz/dx_nn (using Chain Rule manually): {chain_rule_result_nn}")
+
+# Direct differentiation by SymPy
+direct_diff_result_nn = sympy.diff(z_composite, x_nn)
+print(f"dz/dx_nn (direct differentiation by SymPy): {direct_diff_result_nn}")
+
+# Check equality (will likely be True after simplification, SymPy handles that well)
+# Use .simplify() to ensure expressions are in their canonical form for comparison
+print(f"Are results equal? {sympy.simplify(chain_rule_result_nn) == sympy.simplify(direct_diff_result_nn)}")
+                </code></pre>
+                <button class="copy-button" onclick="copyCode('code-chain-rule', this)">Copy Code</button>
+                <span class="copied-message">Copied!</span>
+                <h3 class="text-xl font-semibold text-slate-700 mt-6 mb-3">Key Takeaways:</h3>
+                <ul class="mb-4">
+                    <li>The Chain Rule differentiates composite functions ($f(g(x))$).</li>
+                    <li>It's the mathematical backbone of **Backpropagation**, allowing gradient calculations through deep neural networks.</li>
+                    <li>It allows us to understand how changes in early parameters affect the final output/loss.</li>
+                </ul>
+            </section>
+
+        </main>
+    </div>
+
+    <script>
+        MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']],
+                processEscapes: true,
+                processEnvironments: true
+            },
+            options: {
+                ignoreHtmlClass: 'tex2jax_ignore',
+                processHtmlClass: 'tex2jax_process'
+            }
+        };
+    </script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/languages/python.min.js"></script>
+    <script>
+        // Initialize Highlight.js after the DOM is loaded
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+        });
+    </script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebarLinks = document.querySelectorAll('#sidebar-nav .nav-link');
+            const sections = document.querySelectorAll('#main-content section');
+           // const mainContent = document.getElementById('main-content');
+
+            const highlightNavLink = () => {
+                let currentActive = '';
+                // Adjusted offset for sticky header, potentially smaller if header is less tall
+                const offset = 100; // Pixels from top of viewport
+
+                sections.forEach(section => {
+                    const rect = section.getBoundingClientRect();
+                    // Check if the section's top is visible AND within the top 'offset' pixels
+                    // Or if the section's top is above the offset AND its bottom is below the offset (meaning it spans the offset area)
+                    if (rect.top <= offset && rect.bottom >= offset) {
+                        currentActive = section.id;
+                    }
+                });
+
+                sidebarLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').substring(1) === currentActive) {
+                        link.classList.add('active');
+                    }
+                });
+            };
+
+            // Highlight on scroll
+            window.addEventListener('scroll', highlightNavLink);
+            // Highlight on load
+            highlightNavLink();
+
+            // Smooth scroll for nav links
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    const targetId = this.getAttribute('href');
+                    document.querySelector(targetId).scrollIntoView({
+                        behavior: 'smooth'
+                    });
+                });
+            });
+
+    // Copy Code functionality
+    document.querySelectorAll('.copy-button').forEach(button => {
+        button.addEventListener('click', () => {
+            // The code to copy is now inside a `code` tag, which is a child of `pre`
+            const codeBlock = button.previousElementSibling.querySelector('code');
+            const codeText = codeBlock.textContent.trim();
+
+            navigator.clipboard.writeText(codeText).then(() => {
+                const message = button.nextElementSibling;
+                message.classList.add('show');
+                setTimeout(() => {
+                    message.classList.remove('show');
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy text: ', err);
+            });
+        });
+    });
+});
+    </script>
+</body>
+</html>
